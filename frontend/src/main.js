@@ -51,10 +51,10 @@ createApp({
       <p class="message" role="status">{{ message }}</p>
       <div v-if="results.length" class="table-wrap">
         <table>
-          <thead><tr><th>Hotel</th><th>Location</th><th>Check-in</th><th>Check-out</th><th>Available rooms</th><th>Price/night</th></tr></thead>
+          <thead><tr><th>Hotel</th><th>Location</th><th>Available stay</th><th>Check-in</th><th>Check-out</th><th>Nightly rate</th></tr></thead>
           <tbody>
             <tr v-for="stay in results" :key="stay.hotelId + stay.checkIn">
-              <td>{{ stay.hotelName }}</td><td>{{ stay.city }}, {{ stay.country }}</td><td>{{ stay.checkIn }}</td><td>{{ stay.checkOut }}</td><td>{{ stay.availableRooms }}</td><td>\${{ stay.pricePerNight.toFixed(2) }}</td>
+              <td>{{ stay.hotelName }}</td><td>{{ stay.city }}, {{ stay.state }}</td><td>{{ stay.tripName }}</td><td>{{ stay.checkIn }}</td><td>{{ stay.checkOut }}</td><td>\${{ stay.nightlyRateUsd.toFixed(2) }}</td>
             </tr>
           </tbody>
         </table>

@@ -41,11 +41,12 @@ def hotel_stays() -> list[dict[str, Any]]:
                 "hotelId": hotel["hotel_id"],
                 "hotelName": hotel["hotel_name"],
                 "city": hotel["city"],
-                "country": hotel["country"],
+                "state": hotel["state"],
+                "nightlyRateUsd": float(hotel["nightly_rate_usd"]),
+                "tripId": trip["trip_id"],
+                "tripName": trip["trip_name"],
                 "checkIn": trip["check_in"],
                 "checkOut": trip["check_out"],
-                "availableRooms": int(trip["available_rooms"]),
-                "pricePerNight": float(trip["price_per_night"]),
             }
         )
     return results
@@ -58,7 +59,7 @@ def health() -> dict[str, str]:
 
 @app.get("/api/hotels")
 def search_hotels(q: str = Query(..., min_length=1, max_length=100)) -> dict[str, Any]:
-    """Return available stays whose hotel name contains q, case-insensitively."""
+    """Return offered stays whose hotel name contains q, case-insensitively."""
     query = q.strip().casefold()
     matches = [stay for stay in hotel_stays() if query in stay["hotelName"].casefold()]
     return {"query": q.strip(), "count": len(matches), "results": matches}

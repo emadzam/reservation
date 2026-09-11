@@ -31,7 +31,7 @@ In a second terminal, serve the frontend directory:
 python -m http.server 5173 --directory frontend
 ```
 
-Open `http://127.0.0.1:5173`. Search for `Harbor` to see two available stays, or `No Such Hotel` to confirm the no-results state. The client loads Vue 3 from its official browser module CDN; no Node package installation is required.
+Open `http://127.0.0.1:5173`. Search for `Harbor` to see the two official Harbor Lantern Hotel stays, or `No Such Hotel` to confirm the no-results state. The client loads Vue 3 from its official browser module CDN; no Node package installation is required.
 
 ## API
 

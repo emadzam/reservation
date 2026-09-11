@@ -10,7 +10,7 @@ Successful responses return HTTP 200:
 {
   "query": "Harbor",
   "count": 2,
-  "results": [{ "hotelId": "H100", "hotelName": "Harbor View Hotel", "city": "Boston", "country": "USA", "checkIn": "2026-10-04", "checkOut": "2026-10-07", "availableRooms": 8, "pricePerNight": 189.0 }]
+  "results": [{ "hotelId": "H001", "hotelName": "Harbor Lantern Hotel", "city": "Boston", "state": "MA", "nightlyRateUsd": 150.0, "tripId": "T001", "tripName": "Boston Harbor Weekend", "checkIn": "2026-09-18", "checkOut": "2026-09-20" }]
 }
 ```
 
