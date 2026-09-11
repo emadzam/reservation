@@ -18,4 +18,4 @@ Browser verification completed locally on September 11, 2026 using the supplied 
 
 ## Project context and next steps
 
-See the [README](README.md), [API contract](docs/api-contract.md), and [project guidance](AGENTS.md). Part 2 is intentionally not implemented: it will introduce SQLite, simulated booking, booking history, and CRUD operations. The remaining Part 1 submission step is uploading this report on the assignment page and selecting **Submit Assignment**.
+See the [README](README.md), [API contract](docs/api-contract.md), and [project guidance](AGENTS.md). Part 2 is intentionally not implemented: it will introduce SQLite, simulated booking, booking history, and CRUD operations.
