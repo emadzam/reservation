@@ -6,7 +6,7 @@ Repository URL: https://github.com/emadzam/reservation.git
 
 Exact Part 1 implementation commit: `10fe5fab6846404924c45fb0661a55aff2de3684` (`Complete Part 1 CSV hotel search`).
 
-Official supplied-data correction commit: pending final commit.
+Official supplied-data correction commit: `28ca37d64619dd6e843d96144c820b1daad6060d` (`Use supplied Expedia Lite CSV data`).
 
 ## Implementation
 
