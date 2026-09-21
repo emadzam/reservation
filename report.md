@@ -33,6 +33,14 @@ Manual browser verification completed on September 21, 2026.
 
 Automated controller tests also passed for search, create, cancel, delete, restart-safe seeding, and rejected user/trip references.
 
+### Screenshots
+
+![Harbor search, traveler selection, and booking choices](<docs/screenshots/Screenshot 2026-09-21 162010.png>)
+
+![Confirmed B007 booking](<docs/screenshots/Screenshot 2026-09-21 162037.png>)
+
+![Cancelled B007 retained in booking history](<docs/screenshots/Screenshot 2026-09-21 162104.png>)
+
 ## Project context and next steps
 
 The [README](README.md) contains local run instructions and the MVC layout. The project rules are in [AGENTS.md](AGENTS.md), the architecture decisions are in [docs/design-note.md](docs/design-note.md), and the API input/output contracts are in [docs/api-contract.md](docs/api-contract.md).
