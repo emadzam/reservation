@@ -1,25 +1,40 @@
-# Reservation Lite — Part 1
+# Reservation Lite — Part 2
 
 ## Repository and commit
 
-Repository URL: https://github.com/emadzam/reservation.git
+Repository: https://github.com/emadzam/reservation
 
-Exact Part 1 implementation commit: `10fe5fab6846404924c45fb0661a55aff2de3684` (`Complete Part 1 CSV hotel search`).
+Branch: `codex/part2-sqlite-bookings`
 
-Official supplied-data correction commit: `28ca37d64619dd6e843d96144c820b1daad6060d` (`Use supplied Expedia Lite CSV data`).
+Part 2 application commit: `2b3f40087f53dbe8e1f4d965f7beb81aff116d20` — `Complete Part 2 SQLite booking workflow`.
 
 ## Implementation
 
-Reservation Lite has a Vue browser client in `frontend/` and a Python FastAPI service in `backend/`. The client submits a hotel-name se arch to `GET /api/hotels`. The backend reads the supplied `data/hotels.csv` and `data/trips.csv`, joins records by `hotel_id`, and returns matching hotel stays. The client presents results in a labeled table and gives a clear message when no match exists.
+Reservation Lite now uses a SQLite database seeded from the supplied `hotels.csv`, `trips.csv`, `users.csv`, and `bookings.csv` files. The backend follows MVC: entity definitions and request contracts are in `backend/models/`; `DatabaseController` owns connections, seed reference checks, foreign keys, and persistence; `SearchController` and `BookingController` handle the search and booking flows; FastAPI routes adapt those controllers to HTTP.
+
+The Vue frontend remains the View layer. It searches hotels, selects a demo traveler, creates a simulated booking, reads booking history, changes a confirmed booking to `cancelled` while retaining it, and deletes a test booking. The API contract is documented in `docs/api-contract.md`.
 
 ## Verification
 
-Browser verification completed locally on September 11, 2026 using the supplied CSV files. Searching for `Harbor` returned the two expected `Harbor Lantern Hotel` stays: `Boston Harbor Weekend` and `Boston Autumn Weekend`, each at $150.00 per night. Searching for `No Such Hotel` returned no table rows and displayed: “No hotels or available stays match ‘No Such Hotel’.” The health endpoint also returned `{"status":"ok"}`.
+Manual browser verification completed on September 21, 2026.
+
+- Action: Search for `Harbor`.
+  - Expected: matching hotel stays appear with a traveler selector and booking actions.
+  - Observed: two Harbor Lantern Hotel stays appeared, with all six demo travelers available for selection.
+- Action: Create a booking for Demo Traveler 1 and Boston Autumn Weekend.
+  - Expected: a new confirmed booking appears in history.
+  - Observed: booking `B007` was created and shown in the history table as Confirmed.
+- Action: Cancel `B007`.
+  - Expected: its status changes to Cancelled and the record remains in history.
+  - Observed: the page displayed the cancellation confirmation and retained `B007` with status Cancelled.
+- Action: Delete the temporary `B007` booking.
+  - Expected: the test booking is removed from history.
+  - Observed: the page displayed “Test booking B007 was deleted.” and `B007` no longer appeared in history.
+
+Automated controller tests also passed for search, create, cancel, delete, restart-safe seeding, and rejected user/trip references.
 
 ## Project context and next steps
 
-The [README](README.md) documents the project structure and local run commands. The project rules are in [AGENTS.md](AGENTS.md), the frontend/backend/data decisions are in the [design note](docs/design-note.md), and the selected Part 1 scope is recorded in [prompts/part1-scope.md](prompts/part1-scope.md). The [Part 1 handoff](handoffs/part1-handoff.md) records the completed work and current state.
+The [README](README.md) contains local run instructions and the MVC layout. The project rules are in [AGENTS.md](AGENTS.md), the architecture decisions are in [docs/design-note.md](docs/design-note.md), and the API input/output contracts are in [docs/api-contract.md](docs/api-contract.md).
 
-The current limitation is intentional: Part 1 is read-only and uses CSV files; it has no database, booking flow, booking history, cancellation, or deletion. The next task for Part 2 is to seed SQLite with the supplied hotel, trip, user, and booking records, then implement frontend-driven booking CRUD and history.
-
-
+The application intentionally uses local demo travelers and simulated bookings only. It has no authentication, payments, availability inventory, or deployment configuration.
