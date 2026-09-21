@@ -16,6 +16,12 @@ Reservation Lite has a Vue browser client in `frontend/` and a Python FastAPI se
 
 Browser verification completed locally on September 11, 2026 using the supplied CSV files. Searching for `Harbor` returned the two expected `Harbor Lantern Hotel` stays: `Boston Harbor Weekend` and `Boston Autumn Weekend`, each at $150.00 per night. Searching for `No Such Hotel` returned no table rows and displayed: “No hotels or available stays match ‘No Such Hotel’.” The health endpoint also returned `{"status":"ok"}`.
 
+### Screenshots
+
+![Successful Harbor hotel search](<docs/screenshots/Screenshot 2026-09-11 165940.png>)
+
+![No-results hotel search](<docs/screenshots/Screenshot 2026-09-11 170028.png>)
+
 ## Project context and next steps
 
 The [README](README.md) documents the project structure and local run commands. The project rules are in [AGENTS.md](AGENTS.md), the frontend/backend/data decisions are in the [design note](docs/design-note.md), and the selected Part 1 scope is recorded in [prompts/part1-scope.md](prompts/part1-scope.md). The [Part 1 handoff](handoffs/part1-handoff.md) records the completed work and current state.
