@@ -3,3 +3,7 @@ __pycache__/
 .venv/
 node_modules/
 dist/
+backend/reservation.db
+*-server.log
+*-server-error.log
+desktop.ini
