@@ -5,6 +5,8 @@
 - SQLite schema and idempotent seed loading for hotels, trips, users, and bookings.
 - Database-backed hotel search and frontend-driven booking create, history read, cancellation update, and test-booking deletion.
 - Persistent local database configuration through `RESERVATION_DATABASE_PATH`.
+- Part 2 feature branch reviewed, merged into `main`, tested, and pushed.
+- A 1 minute 19 second user-interaction demo is stored at `docs/part2-demo.mp4` and linked from `report.md`.
 
 ## Verification
 
@@ -16,4 +18,4 @@ The project uses local demo travelers and simulated bookings. It does not includ
 
 ## Next task
 
-Review the feature branch, merge it into `main`, push the final commit, and upload `report.md` to the Part 2 submission page.
+Upload `report.md` to the Part 2 submission page.
