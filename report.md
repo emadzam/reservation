@@ -10,7 +10,7 @@ Part 2 application commit: 2b3f40087f53dbe8e1f4d965f7beb81aff116d20 — Complete
 
 Reservation Lite uses a SQLite database initialized using the provided `hotels.csv`, `trips.csv`, `users.csv`, and `bookings.csv` files. The backend uses MVC: entity classes and request contracts are in `backend/models/`; `DatabaseController` managing connections, reference validation on seed, foreign keys, and persistence; `SearchController` and `BookingController` manage search and booking operations; FastAPI endpoints adapt those controllers to HTTP.
 
-The Vue frontend is the View layer. It allows searching for hotels, choosing a demo traveler, creating a simulated booking, listing booking history, changing a booking to `cancelled` while retaining it, and deleting a test booking. The API contract is described in `docs/api-contract.md`.
+The Vue frontend is the View layer. It allows to search for hotels, choosing a demo traveler, creating a booking, list the booking history, changing a booking to cancelled while retaining it, and deleting a test booking. The API contract is described in `docs/api-contract.md`.
 
 ## Verification
 
