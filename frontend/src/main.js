@@ -1,19 +1,100 @@
-import { createApp, onMounted, ref } from "https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js";
+import { createApp, nextTick, ref } from "https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js";
 
 const API_BASE_URL = "http://127.0.0.1:8000";
+let map;
+let markers = [];
+
 createApp({
   setup() {
-    const hotelName = ref(""), results = ref([]), searchMessage = ref("Search for a hotel to view available stays."), isSearching = ref(false);
-    const users = ref([]), selectedUserId = ref(""), bookings = ref([]), bookingMessage = ref(""), isLoadingHistory = ref(false), busyBookingId = ref("");
-    async function request(path, options = {}) { const response = await fetch(`${API_BASE_URL}${path}`, options); if (!response.ok) { const body = await response.json().catch(() => ({})); throw new Error(body.detail || "The reservation service is unavailable."); } return response.status === 204 ? null : response.json(); }
-    async function search() { const query = hotelName.value.trim(); results.value = []; if (!query) { searchMessage.value = "Enter a hotel name before searching."; return; } isSearching.value = true; searchMessage.value = ""; try { const data = await request(`/api/hotels?q=${encodeURIComponent(query)}`); results.value = data.results; searchMessage.value = data.count ? `${data.count} available stay${data.count === 1 ? "" : "s"} found. Select one to book it.` : `No hotels or available stays match “${query}”.`; } catch (error) { searchMessage.value = error.message; } finally { isSearching.value = false; } }
-    async function loadHistory() { isLoadingHistory.value = true; try { bookings.value = (await request("/api/bookings")).bookings; } catch (error) { bookingMessage.value = error.message; } finally { isLoadingHistory.value = false; } }
-    async function loadUsers() { try { users.value = (await request("/api/users")).users; selectedUserId.value = users.value[0]?.userId || ""; } catch (error) { bookingMessage.value = error.message; } }
-    async function bookStay(stay) { if (!selectedUserId.value) { bookingMessage.value = "Choose a traveler before booking."; return; } busyBookingId.value = stay.tripId; try { const data = await request("/api/bookings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user_id: selectedUserId.value, trip_id: stay.tripId }) }); bookingMessage.value = `${data.message} Reference: ${data.bookingId}.`; await loadHistory(); } catch (error) { bookingMessage.value = error.message; } finally { busyBookingId.value = ""; } }
-    async function cancelBooking(booking) { busyBookingId.value = booking.bookingId; try { await request(`/api/bookings/${encodeURIComponent(booking.bookingId)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "cancelled" }) }); bookingMessage.value = `Booking ${booking.bookingId} was cancelled and remains in your history.`; await loadHistory(); } catch (error) { bookingMessage.value = error.message; } finally { busyBookingId.value = ""; } }
-    async function deleteBooking(booking) { if (!window.confirm(`Delete test booking ${booking.bookingId}? This cannot be undone.`)) return; busyBookingId.value = booking.bookingId; try { await request(`/api/bookings/${encodeURIComponent(booking.bookingId)}`, { method: "DELETE" }); bookingMessage.value = `Test booking ${booking.bookingId} was deleted.`; await loadHistory(); } catch (error) { bookingMessage.value = error.message; } finally { busyBookingId.value = ""; } }
-    onMounted(async () => { await Promise.all([loadUsers(), loadHistory()]); });
-    return { hotelName, results, searchMessage, isSearching, users, selectedUserId, bookings, bookingMessage, isLoadingHistory, busyBookingId, search, bookStay, cancelBooking, deleteBooking, loadHistory };
+    const zipCode = ref("");
+    const hotels = ref([]);
+    const searchCenter = ref(null);
+    const selectedIndex = ref(null);
+    const state = ref("idle");
+    const message = ref("Enter a five-digit U.S. ZIP code to find nearby hotels.");
+
+    async function search() {
+      const zip = zipCode.value.trim();
+      hotels.value = [];
+      searchCenter.value = null;
+      selectedIndex.value = null;
+      if (!/^\d{5}$/.test(zip)) {
+        state.value = "invalid";
+        message.value = "Enter a five-digit U.S. ZIP code.";
+        clearMap();
+        return;
+      }
+      state.value = "loading";
+      message.value = `Finding hotels near ${zip}…`;
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/nearby-hotels?zip=${encodeURIComponent(zip)}`);
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          state.value = response.status === 404 ? "unresolved" : "failure";
+          message.value = body.detail || "The hotel search service is unavailable. Please try again.";
+          clearMap();
+          return;
+        }
+        hotels.value = body.hotels;
+        searchCenter.value = body.searchCenter;
+        state.value = body.count ? "results" : "empty";
+        message.value = body.count ? `${body.count} hotel${body.count === 1 ? "" : "s"} found within 5 km of ${zip}.` : `No hotels were found within 5 km of ${zip}.`;
+      } catch {
+        state.value = "failure";
+        message.value = "The hotel search service is unavailable. Please try again.";
+        clearMap();
+      }
+      if (state.value === "results" || state.value === "empty") {
+        await nextTick();
+        renderMap();
+      }
+    }
+
+    function selectHotel(index) {
+      selectedIndex.value = index;
+      markers.forEach((marker, markerIndex) => marker.setIcon(markerIcon(markerIndex === index)));
+      if (markers[index]) markers[index].openPopup();
+    }
+
+    function markerIcon(selected) {
+      return L.divIcon({ className: "hotel-marker", html: `<span class="${selected ? "selected" : ""}">●</span>`, iconSize: [24, 24], iconAnchor: [12, 12] });
+    }
+
+    function renderMap() {
+      clearMap();
+      if (!searchCenter.value) return;
+      map = L.map("hotel-map", { scrollWheelZoom: false }).setView([searchCenter.value.latitude, searchCenter.value.longitude], 13);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap contributors" }).addTo(map);
+      L.circle([searchCenter.value.latitude, searchCenter.value.longitude], { radius: 5000, color: "#176a57", fillColor: "#176a57", fillOpacity: 0.06 }).addTo(map);
+      markers = hotels.value.map((hotel, index) => L.marker([hotel.latitude, hotel.longitude], { icon: markerIcon(false) }).addTo(map).bindPopup(`<strong>${escapeHtml(hotel.name)}</strong><br>${escapeHtml(hotel.address)}`).on("click", () => selectHotel(index)));
+      if (markers.length) map.fitBounds(L.featureGroup(markers).getBounds().pad(0.25));
+    }
+
+    function clearMap() {
+      markers = [];
+      if (map) { map.remove(); map = undefined; }
+    }
+
+    return { zipCode, hotels, selectedIndex, state, message, search, selectHotel };
   },
-  template: `<section class="search-card" aria-labelledby="page-title"><p class="eyebrow">LOCAL TRAVEL SEARCH</p><h1 id="page-title">Reservation Lite</h1><p class="intro">Search available stays, simulate a booking, and manage booking history.</p><form class="search-form" @submit.prevent="search"><label for="hotel-name">Hotel name</label><div class="input-row"><input id="hotel-name" v-model="hotelName" type="search" placeholder="Try Harbor or Maple" autocomplete="off" /><button type="submit" :disabled="isSearching">{{ isSearching ? "Searching…" : "Search" }}</button></div></form><p class="message" role="status">{{ searchMessage }}</p><section v-if="results.length" class="booking-panel" aria-labelledby="book-title"><div class="section-heading"><h2 id="book-title">Book a stay</h2><label for="traveler">Traveler <select id="traveler" v-model="selectedUserId"><option v-for="user in users" :key="user.userId" :value="user.userId">{{ user.userName }}</option></select></label></div><div class="table-wrap"><table><thead><tr><th>Hotel</th><th>Location</th><th>Available stay</th><th>Dates</th><th>Nightly rate</th><th>Action</th></tr></thead><tbody><tr v-for="stay in results" :key="stay.tripId"><td>{{ stay.hotelName }}</td><td>{{ stay.city }}, {{ stay.state }}</td><td>{{ stay.tripName }}</td><td>{{ stay.checkIn }} – {{ stay.checkOut }}</td><td>\${{ stay.nightlyRateUsd.toFixed(2) }}</td><td><button class="small-button" @click="bookStay(stay)" :disabled="busyBookingId === stay.tripId">{{ busyBookingId === stay.tripId ? "Booking…" : "Book stay" }}</button></td></tr></tbody></table></div></section><section class="history-panel" aria-labelledby="history-title"><div class="section-heading"><div><h2 id="history-title">Booking history</h2><p>Confirmed bookings can be canceled while keeping their record. Use delete only for test bookings.</p></div><button class="secondary-button" @click="loadHistory" :disabled="isLoadingHistory">{{ isLoadingHistory ? "Loading…" : "Refresh history" }}</button></div><p class="message" role="status">{{ bookingMessage }}</p><div v-if="bookings.length" class="table-wrap"><table><thead><tr><th>Reference</th><th>Traveler</th><th>Stay</th><th>Dates</th><th>Status</th><th>Actions</th></tr></thead><tbody><tr v-for="booking in bookings" :key="booking.bookingId"><td>{{ booking.bookingId }}</td><td>{{ booking.userName }}</td><td>{{ booking.hotelName }}<br><span>{{ booking.tripName }}</span></td><td>{{ booking.checkIn }} – {{ booking.checkOut }}</td><td><span class="status" :class="booking.status">{{ booking.status }}</span></td><td class="actions"><button v-if="booking.status === 'confirmed'" class="secondary-button small-button" @click="cancelBooking(booking)" :disabled="busyBookingId === booking.bookingId">Cancel</button><button class="danger-button small-button" @click="deleteBooking(booking)" :disabled="busyBookingId === booking.bookingId">Delete test</button></td></tr></tbody></table></div><p v-else-if="!isLoadingHistory" class="empty-history">No bookings yet.</p></section></section>`,
+  template: `
+    <main class="search-card" aria-labelledby="page-title">
+      <p class="eyebrow">ASSIGNMENT 2 · PART 1</p>
+      <h1 id="page-title">Nearby Hotel Search</h1>
+      <p class="intro">Search live hotel locations within 5 km of an exact U.S. ZIP code.</p>
+      <form class="search-form" @submit.prevent="search" novalidate>
+        <label for="zip-code">U.S. ZIP code</label>
+        <div class="input-row"><input id="zip-code" v-model="zipCode" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="e.g. 02108" :aria-invalid="state === 'invalid'" aria-describedby="search-status" /><button type="submit" :disabled="state === 'loading'">{{ state === 'loading' ? 'Searching…' : 'Search' }}</button></div>
+      </form>
+      <p id="search-status" class="message" :class="state" role="status" aria-live="polite">{{ message }}</p>
+      <section v-if="state === 'results' || state === 'empty'" class="results-layout" aria-label="Nearby hotels and map">
+        <section class="hotel-list" aria-labelledby="hotel-list-title"><h2 id="hotel-list-title">Hotels</h2><p v-if="!hotels.length" class="empty-state">No nearby hotels to show.</p><button v-for="(hotel, index) in hotels" :key="hotel.id || hotel.latitude + ',' + hotel.longitude" class="hotel-card" :class="{ selected: selectedIndex === index }" @click="selectHotel(index)"><strong>{{ hotel.name }}</strong><span>{{ hotel.address }}</span><small>{{ hotel.latitude.toFixed(5) }}, {{ hotel.longitude.toFixed(5) }}</small></button></section>
+        <section class="map-panel" aria-labelledby="map-title"><h2 id="map-title">Map</h2><div id="hotel-map" aria-label="Map of nearby hotel locations"></div><p class="map-note">Select a hotel in either view to highlight it in the other.</p></section>
+      </section>
+    </main>
+  `,
 }).mount("#app");
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
+}

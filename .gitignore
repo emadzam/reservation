@@ -7,3 +7,6 @@ backend/reservation.db
 *-server.log
 *-server-error.log
 desktop.ini
+.env
+.env.*
+!.env.example

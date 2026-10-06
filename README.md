@@ -17,7 +17,29 @@ In a second terminal, serve the client:
 python -m http.server 5173 --directory frontend
 ```
 
-Open `http://127.0.0.1:5173`. Search a hotel such as `Harbor`, select a traveler, create a booking, and use Booking history to cancel or delete a test booking.
+Open `http://127.0.0.1:5173`. Assignment 2, Part 1 is the active screen: enter
+a five-digit U.S. ZIP code to search live hotels within 5 km of its resolved
+postcode center. Select a hotel card or map marker to highlight the same hotel
+in both views.
+
+## Backend configuration
+
+`backend/config.py` loads simple `KEY=VALUE` entries from the project-root
+`.env` beside `backend/` and `frontend/`, using only the Python standard
+library. Set
+`GEOAPIFY_API_KEY` there; existing process environment variables take precedence.
+Configuration is read when the backend starts. Stop and restart the backend
+after editing `.env`; do not rely on development auto-reload for these changes.
+`GET /api/health` preserves `status` and adds `geoapify`, reporting only
+`key is configured` or `key is not configured`. Missing, empty, and whitespace-only
+keys are not configured. This check does not call Geoapify or return the key.
+
+`backend/controllers/location_controller.py` resolves the exact U.S. ZIP, and
+`backend/controllers/nearby_hotels_controller.py` searches Geoapify Places in a
+5 km circle around its returned location. The Vue screen calls
+`GET /api/nearby-hotels?zip={zip}`; only the backend calls Geoapify. Its response
+contract is documented in `docs/api-contract.md`. Run mocked checks with
+`.venv/Scripts/python.exe -m unittest backend.test_location backend.test_nearby_hotels`.
 
 ## Persistence and data
 

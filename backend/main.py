@@ -9,9 +9,12 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend import config
 from backend.controllers.booking_controller import BookingController
 from backend.controllers.database_controller import DatabaseController
 from backend.controllers.search_controller import SearchController
+from backend.controllers.location_controller import lookup_zip
+from backend.controllers.nearby_hotels_controller import find_nearby_hotels
 from backend.models.contracts import BookingCreate, BookingStatusUpdate
 
 
@@ -39,12 +42,36 @@ def startup() -> None:
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "geoapify": "key is configured" if config.GEOAPIFY_API_KEY else "key is not configured",
+    }
 
 
 @app.get("/api/hotels")
 def search_hotels(q: str = Query(..., min_length=1, max_length=100)) -> dict[str, Any]:
     return search_controller.search(q)
+
+
+@app.get("/api/demo/zip-location")
+def demo_zip_location(postcode: str = Query(..., pattern=r"^[0-9]{5}$")) -> dict[str, Any]:
+    result = lookup_zip(postcode)
+    if result["status"] == "unresolved":
+        raise HTTPException(status_code=404, detail=f"ZIP {postcode} could not be resolved.")
+    if result["status"] != "resolved":
+        raise HTTPException(status_code=502, detail="The ZIP lookup provider is unavailable. Please try again.")
+    return result["location"]
+
+
+@app.get("/api/nearby-hotels")
+def nearby_hotels(zip: str = Query(..., pattern=r"^[0-9]{5}$")) -> dict[str, Any]:
+    """Return live hotel places within 5 km of the exact resolved U.S. ZIP center."""
+    result = find_nearby_hotels(zip)
+    if result["status"] == "unresolved":
+        raise HTTPException(status_code=404, detail=f"ZIP {zip} could not be resolved.")
+    if result["status"] != "resolved":
+        raise HTTPException(status_code=502, detail="The hotel search service is unavailable. Please try again.")
+    return {"zip": zip, "searchCenter": result["searchCenter"], "count": len(result["hotels"]), "hotels": result["hotels"]}
 
 
 @app.get("/api/users")

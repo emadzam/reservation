@@ -6,6 +6,76 @@ All endpoints are served by FastAPI and persist application records in SQLite. T
 
 The Vue View sends HTTP requests only; it does not access CSV files or SQLite. FastAPI routes adapt HTTP input to the Search and Booking controllers. Those business controllers call the Database controller through public methods. The Database controller returns JSON-ready records and enforces the hotel-to-trip and user/trip-to-booking references before writes.
 
+## ZIP lookup
+
+`GET /api/demo/zip-location?postcode=16802` calls the ZIP controller with the
+required five-digit U.S. ZIP string `postcode`. Missing or invalid input returns
+HTTP 422 without calling the provider. Leading zeros are preserved. HTTP 200 returns the location object described below, without the
+controller status wrapper. Unresolved locations return HTTP 404 with
+`{ "detail": "ZIP 16802 could not be resolved." }`. Provider failures return
+HTTP 502 with `{ "detail": "The ZIP lookup provider is unavailable. Please try again." }`.
+The Vue panel uses the existing backend request helper; only the backend calls
+Geoapify. The unresolved error names the requested postcode.
+
+## ZIP controller
+
+`backend.controllers.location_controller.lookup_zip(postcode)` accepts a five-digit
+ZIP string; invalid input raises a fixed-message `ValueError`. The demonstration
+input is `"16802"`. It uses the configured backend key and `urllib.request` with
+a 10-second timeout to call [Geoapify forward geocoding](https://apidocs.geoapify.com/docs/geocoding/)
+with `postcode`, `type=postcode`, `filter=countrycode:us`, and `format=json`.
+
+- Success: `{ "status": "resolved", "location": { "postcode": "16802", "country_code": "us", "latitude": 40.8, "longitude": -77.9, "locality": "University Park" } }`
+  (illustrative coordinates). Locality is optional, chosen from city, town,
+  village, hamlet, then locality.
+- No matching result: `{ "status": "unresolved" }`. Only exact postcode matches
+  with U.S. country code and finite numeric coordinates within latitude/longitude
+  bounds are accepted; booleans and numeric strings are rejected.
+- Missing configuration, transport/HTTP errors, invalid JSON, or invalid response
+  envelope: `{ "status": "provider_error" }`. Provider errors are distinct from
+  a valid result list containing no acceptable location.
+
+No key, request URL, or exception details are returned or logged. Location data
+is independent of the priced Hotel model and does not access the database.
+Mocked checks: `.venv/Scripts/python.exe -m unittest backend.test_location`.
+
+## Live nearby-hotel search — Assignment 2, Part 1
+
+`GET /api/nearby-hotels?zip=02108` accepts exactly five digits and preserves
+leading zeros. FastAPI first resolves that exact U.S. postcode using Geoapify,
+then queries Geoapify Places with `categories=accommodation.hotel`,
+`filter=circle:{longitude},{latitude},5000`, and a proximity bias using the
+same resolved point. It never substitutes a different location when a ZIP is
+unresolved.
+
+Successful responses return HTTP 200:
+
+```json
+{
+  "zip": "02108",
+  "searchCenter": { "postcode": "02108", "country_code": "us", "latitude": 42.357, "longitude": -71.063 },
+  "count": 1,
+  "hotels": [{ "name": "Example Hotel", "address": "1 Main St, Boston", "latitude": 42.358, "longitude": -71.064 }]
+}
+```
+
+If the exact ZIP cannot be resolved, the API returns HTTP 404. Provider,
+configuration, network, or malformed-response failures return HTTP 502. A
+successful response with `count: 0` is the only no-nearby-results case. The
+response contains no price, rating, room availability, or booking fields. Name
+and address use explicit “unavailable” labels only when Geoapify omitted them.
+
+The Vue View calls only this endpoint. Leaflet uses public OpenStreetMap map
+tiles, and the Geoapify key remains backend-only in `.env`.
+
+## Health
+
+`GET /api/health` returns HTTP 200 with
+`{ "status": "ok", "geoapify": "key is configured" }`.
+The `geoapify` field is `key is not configured` when the key is absent, empty,
+or whitespace-only. It reports local configuration only; no Geoapify request is
+made and no key value is returned.
+
 ## Search and users
 
 - `GET /api/hotels?q={hotelName}` searches hotel names case-insensitively and returns joined hotel/trip stays.

@@ -1,21 +1,25 @@
-# Part 2 handoff
+# Assignment 2, Part 1 handoff
 
 ## Completed
 
-- SQLite schema and idempotent seed loading for hotels, trips, users, and bookings.
-- Database-backed hotel search and frontend-driven booking create, history read, cancellation update, and test-booking deletion.
-- Persistent local database configuration through `RESERVATION_DATABASE_PATH`.
-- Part 2 feature branch reviewed, merged into `main`, tested, and pushed.
-- A 1 minute 19 second user-interaction demo is stored at `docs/part2-demo.mp4` and linked from `report.md`.
+- Research notes and an early ZIP-search/list/map mockup.
+- Backend-only Geoapify configuration through local `.env` and a committed
+  `.env.example` without secrets.
+- Exact U.S. ZIP geocoding followed by a live Geoapify Places hotel search
+  within 5 km of the resolved ZIP center.
+- Vue list and Leaflet map with synchronized hotel selection.
+- Screen-recorded Part 1 demo saved as `docs/assignment2-part1-demo.mp4` and
+  linked from `report.md`.
+- Clear invalid-input, loading, unresolved-ZIP, no-results, and service-failure
+  states.
 
-## Verification
+## Checked
 
-`backend/test_api.py` passes against a temporary database, covering search, create, cancel, delete, restart-safe seeding, and invalid references. Browser checks confirmed search, booking, history, cancellation retention, and test-booking deletion. B007 remained cancelled after a browser refresh and after restarting both local services, confirming SQLite persistence without reseeding duplicates.
-
-## Limitations
-
-The project uses local demo travelers and simulated bookings. It does not include authentication, payment processing, inventory management, or deployment configuration.
+The full unit suite contains 11 passing tests. Live browser verification for
+ZIP `16801` displayed 15 nearby hotels, a map, marker controls, and the 5 km
+search circle.
 
 ## Next task
 
-Upload `report.md` to the Part 2 submission page.
+Part 2 can add the persistent shortlist to the existing live-search result
+model without moving the Geoapify key into the frontend.
