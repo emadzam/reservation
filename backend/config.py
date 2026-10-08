@@ -20,3 +20,5 @@ def load_local_env(path: Path) -> None:
 
 load_local_env(Path(__file__).resolve().parents[1] / ".env")
 GEOAPIFY_API_KEY = os.environ.get("GEOAPIFY_API_KEY", "").strip()
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "").strip()
+OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-6-luna").strip()

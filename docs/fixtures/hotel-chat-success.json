@@ -1,0 +1,15 @@
+{
+  "question": "What is available on October 10?",
+  "model_sql_response": {
+    "sql": "SELECT h.name, n.stay_date, n.nightly_rate_cents, n.rooms_available FROM saved_hotels h JOIN demo_hotel_nights n ON n.hotel_id = h.hotel_id WHERE n.stay_date = '2026-10-10'"
+  },
+  "retrieved_records": [
+    {
+      "name": "Chat Hotel",
+      "stay_date": "2026-10-10",
+      "nightly_rate_cents": 10000,
+      "rooms_available": 20
+    }
+  ],
+  "grounded_answer": "Chat Hotel has a simulated classroom rate of $100.00 on October 10, with 20 rooms available."
+}

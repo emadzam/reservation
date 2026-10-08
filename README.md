@@ -34,6 +34,13 @@ after editing `.env`; do not rely on development auto-reload for these changes.
 `key is configured` or `key is not configured`. Missing, empty, and whitespace-only
 keys are not configured. This check does not call Geoapify or return the key.
 
+The Part 2 chatbot additionally uses `OPENAI_API_KEY` and, by default,
+`OPENAI_MODEL=gpt-6-luna`. Both stay in the backend-only `.env` file. No
+additional Python package is required: the backend uses the official OpenAI
+Responses API through its existing standard-library HTTPS client. It makes two
+non-streaming requests: one proposes SQL and the second writes an answer from
+the checked records. Restart FastAPI after changing either chatbot setting.
+
 `backend/controllers/location_controller.py` resolves the exact U.S. ZIP, and
 `backend/controllers/nearby_hotels_controller.py` searches Geoapify Places in a
 5 km circle around its returned location. The Vue screen calls
@@ -44,6 +51,19 @@ contract is documented in `docs/api-contract.md`. Run mocked checks with
 ## Persistence and data
 
 On first startup, the backend creates `backend/reservation.db` and idempotently seeds hotels, trips, users, and booking fixtures from `data/`. Subsequent starts preserve saved additions, cancellations, and deletions without duplicating seed records. The database is local and ignored by Git.
+
+Assignment 2, Part 2 adds a separate local shortlist for live API results. A
+saved provider hotel retains its original ZIP search context and receives
+simulated classroom nightly data for October 10–14, 2026. The Vue client checks
+`GET /api/saved-hotels?zip={zip}` first; it calls the unchanged live
+`/api/nearby-hotels` endpoint only when that local shortlist has no match.
+`POST /api/saved-hotels` and `DELETE /api/saved-hotels/{hotelId}` manage the
+local shortlist without changing Assignment 1 records.
+
+`POST /api/hotel-chat` accepts a natural-language question and reads only the
+saved-hotel, ZIP-context, and demo-night tables. Model-proposed SQL must be one
+bounded `SELECT`; SQLite authorizes reads only from those local Part 2 tables.
+The chatbot cannot write records or make bookings.
 
 Set `RESERVATION_DATABASE_PATH` to use another SQLite file, such as an isolated test database.
 
