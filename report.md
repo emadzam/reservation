@@ -1,87 +1,82 @@
-# Assignment 2 — Part 1: Live Hotel Search and Map
-
+# Assignment 2 — Part 2: Persistent Shortlist and Grounded Hotel Chatbot
 
 ## Project access
 
 - Repository: [github.com/emadzam/reservation](https://github.com/emadzam/reservation)
-- Current assessed base commit: `ee70bbf` (replace this with the final Assignment
-  2 Part 1 commit hash after committing the reviewed work).
-- Startup and configuration instructions: [README.md](README.md)
+- Assessed commit: _replace with the final Part 2 commit hash before upload_.
+- Startup and configuration: [README.md](README.md)
 - API contract: [docs/api-contract.md](docs/api-contract.md)
 
-To run locally, create a local `.env` file from `.env.example`, add the
-Geoapify key, start FastAPI with `python -m uvicorn backend.main:app --reload`,
-and serve `frontend/` on port 5173. The `.env` file is ignored by Git and the
-key is never copied into the frontend.
+Create a local `.env` from `.env.example`. Configure `GEOAPIFY_API_KEY` for
+Part 1 live searches and `OPENAI_API_KEY` for the Part 2 chatbot. Both
+stay in `.env`, which is ignored by Git. Start FastAPI and serve `frontend/`
+on port 5173 as described in the README.
 
 ## Research notes
 
-Research sources, useful features, limitations, and design decisions are in
-[docs/assignment2-part1-research.md](docs/assignment2-part1-research.md).
+Sources, observed limitations, and resulting design choices are in
+[docs/assignment2-part2-research.md](docs/assignment2-part2-research.md).
 
-The main decisions were to use Geoapify Geocoding for exact U.S. ZIP resolution,
-Geoapify Places with an `accommodation.hotel` 5 km circle filter, and Leaflet
-for an interactive synchronized list and map. A static map was not used because
-it cannot support the required marker/list selection behavior. Provider fields
-can be incomplete, so the app labels missing names and addresses honestly rather
-than inventing data.
+The design keeps Geoapify data separate from simulated course data. It uses two
+backend-only model requests: an SQL proposal, then a grounded answer using only
+checked SQLite records. The model has no direct database access.
 
 ## Early mockup
 
-The early mockup was prepared before the live-map implementation. It shows the
-ZIP form, list/map interaction, and loading, invalid ZIP, unresolved ZIP,
-no results, and service-failure states.
+[View the early Part 2 chatbot mockup](docs/mockups/assignment2-part2-chatbot-mockup.md).
 
-![Assignment 2 Part 1 early mockup](docs/mockups/assignment2-part1-hotel-search-mockup.png)
-
-The implementation keeps the mockup’s two-column layout and shared selection
-behavior. It was adjusted to use live Geoapify data, OpenStreetMap tiles, and
-honest fallback labels for missing provider fields.
-
-## Implementation
-
-The Vue frontend is the View layer. It validates the five-digit ZIP input,
-displays clear interface states, renders API-returned hotel names, locations,
-and coordinates, and uses Leaflet for an interactive map. Selecting a hotel
-card updates its map marker; selecting a marker selects the same list item.
-
-FastAPI resolves the exact requested U.S. ZIP before calling Geoapify Places.
-The Places query uses an `accommodation.hotel` category and a 5,000-metre circle
-centered on the returned ZIP location. An unresolved ZIP never falls back to a
-different location. The client does not access CSV files, SQLite, or secret
-keys.
+It extends the earlier search/list/map layout with a saved-hotel question area,
+an answer state, and a collapsible checked-SQL/retrieved-records panel. The
+implemented interface adds explicit loading, insufficient-data, no-match, and
+provider-failure feedback.
 
 ## Screen-recorded demo video
 
-[Watch the Assignment 2 Part 1 demo video](docs/assignment2-part1-demo.mp4)
-
-The recording shows the running local application, including live ZIP search,
-hotel-list results, and the interactive Leaflet map. It is stored in `docs/` so
-the report link continues to work with the submitted project files.
+[Watch the Assignment 2 Part 2 demonstration](docs/assignment2-part2-demo.mp4).
+It shows API results, Add to Local, stored local results after refresh, one
+grounded chatbot answer with its SQL and retrieved records, the simulated-data
+labels, and Remove from Local.
 
 ## Verification record
 
 | Date | Input or action | Expected result | Observed result | Correction or limitation |
 | --- | --- | --- | --- | --- |
-| 2026-09-29 | Run the automated test command below | Controllers validate ZIPs, preserve exact matching, request Places inside 5 km, and handle provider failures | 11 checks passed | Tests use mocked provider responses and do not spend live API credits. |
-| 2026-09-29 | Search live ZIP `16801` | Nearby hotels load as a list and interactive map | 15 live hotels appeared; markers, zoom controls, and the 5 km circle were visible | Results can change as Geoapify’s live data changes. |
-| 2026-09-29 | Enter invalid ZIP input | Clear invalid-input feedback without a provider request | The page displayed the five-digit ZIP instruction | None. |
-| 2026-09-29 | Initial map check | Leaflet map should render with live results | The hotel list loaded but the map panel was blank | Corrected Leaflet CDN tags in `frontend/index.html`, refreshed, and confirmed the interactive map appeared. |
+| 2026-10-08 | ZIP `16801`, no saved local match | API results label and live hotel list/map | 15 API results appeared in the browser | Live results can change with Geoapify data. |
+| 2026-10-08 | Add one API hotel locally | One saved hotel, ZIP context, and Oct. 10–14 demo nights | Record, association, and five rows with 10000 cents / 20 rooms were observed | Rates and room counts are simulated course data. |
+| 2026-10-08 | Refresh and repeat ZIP `16801` | Saved-local result, no live provider lookup needed | Saved locally label, one local card, and five dated rows appeared | Local results are a saved subset, not a complete area inventory. |
+| 2026-10-08 | Select local hotel card | Matching map marker and popup become selected | List selection opened the matching map popup | None. |
+| 2026-10-08 | Remove from Local | Selected hotel, context, and five demo nights are deleted; Assignment 1 records remain | Local Part 2 tables returned to zero rows; Assignment 1 counts remained 8 hotels, 12 trips, 6 users, 6 bookings | None. |
+| 2026-10-08 | Fixed successful chatbot fixture | Two model calls, checked SELECT, bounded records, grounded answer | Automated test passed | Fixture is a labeled mock, not a live model call. See [success fixture](docs/fixtures/hotel-chat-success.json). |
+| 2026-10-08 | Fixed invalid-query fixture (`DELETE`) | Proposal rejected before SQLite execution | Automated test passed and saved row remained | Fixture is a labeled failure mock. See [invalid fixture](docs/fixtures/hotel-chat-invalid-query.json). |
+| 2026-10-08 | Live OpenAI chatbot call after saving a local hotel | Provider returns a checked-SQL, grounded answer from saved data | A successful answer appeared in the browser after the response budget was increased; the UI exposed the proposed SQL and retrieved records | The answer is limited to saved hotels and simulated classroom records; it is not a complete hotel inventory. |
 
-Automated command:
+Repeat the deterministic chatbot checks:
 
-```text
-.venv\Scripts\python.exe -m unittest backend.test_api backend.test_location backend.test_nearby_hotels -v
+```powershell
+$env:TEMP="$PWD\.test-temp"; $env:TMP="$PWD\.test-temp"
+.venv\Scripts\python.exe -m unittest backend.test_hotel_chat -v
 ```
 
 ## AI disclosure and evidence log
 
-The complete concise disclosure, tool/model list, selected prompt excerpts,
-linked code evidence, and failed/revised map approach are in
-[prompts/assignment2-part1-ai-log.md](prompts/assignment2-part1-ai-log.md).
+| Tool or model | Use |
+| --- | --- |
+| Codex (GPT-5) | Planned the MVC workflow, implemented backend/frontend changes, wrote tests and documentation, and reviewed verification output. |
+| Codex terminal and browser tools | Inspected code, tested local endpoints, verified the browser’s local-storage behavior, and ran automated checks. |
+| OpenAI Responses API / GPT-6 Luna | Backend-only provider for the required two-request SQL-proposal and grounded-answer workflow. It uses `OPENAI_API_KEY` and `OPENAI_MODEL` from `.env`. |
+| Geoapify | Supplies Part 1 ZIP and nearby-place data only; it does not supply the demo rates or room counts. |
 
-## Remaining limitations
+Selected prompt evidence:
 
-The app depends on live Geoapify and OpenStreetMap availability. No price,
-rating, availability, booking, user account, payment, or deployment feature is
-included because those are outside Assignment 2 Part 1.
+- “Generate and execute a focused query”: implemented in
+  [hotel_chat_controller.py](backend/controllers/hotel_chat_controller.py) and
+  [database_controller.py](backend/controllers/database_controller.py), with
+  SQL validation, SQLite read authorization, and a 50-row cap.
+- “Augment the answer with retrieved records”: the second provider request
+  receives only the checked result rows, not database access.
+- Failed/revised approach: an initial test run used the sandbox's default
+  temporary directory and could not create temporary SQLite files. The checks
+  were rerun with a workspace-local `.test-temp` directory; all application
+  tests then passed. The first live model request returned an empty response,
+  so the protected response budgets were increased before the successful
+  browser verification.

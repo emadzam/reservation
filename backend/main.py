@@ -13,9 +13,12 @@ from backend import config
 from backend.controllers.booking_controller import BookingController
 from backend.controllers.database_controller import DatabaseController
 from backend.controllers.search_controller import SearchController
+from backend.controllers.saved_hotel_controller import SavedHotelController
+from backend.controllers.hotel_chat_controller import ChatWorkflowError, HotelChatController
+from backend.controllers.openai_controller import ModelProviderError
 from backend.controllers.location_controller import lookup_zip
 from backend.controllers.nearby_hotels_controller import find_nearby_hotels
-from backend.models.contracts import BookingCreate, BookingStatusUpdate
+from backend.models.contracts import BookingCreate, BookingStatusUpdate, HotelQuestion, SavedHotelCreate
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -25,6 +28,8 @@ DATABASE_PATH = Path(os.environ.get("RESERVATION_DATABASE_PATH", PROJECT_ROOT / 
 database_controller = DatabaseController(DATABASE_PATH, DATA_DIRECTORY)
 search_controller = SearchController(database_controller)
 booking_controller = BookingController(database_controller)
+saved_hotel_controller = SavedHotelController(database_controller)
+hotel_chat_controller = HotelChatController(database_controller)
 
 app = FastAPI(title="Reservation Lite API", version="2.0.0")
 app.add_middleware(
@@ -72,6 +77,41 @@ def nearby_hotels(zip: str = Query(..., pattern=r"^[0-9]{5}$")) -> dict[str, Any
     if result["status"] != "resolved":
         raise HTTPException(status_code=502, detail="The hotel search service is unavailable. Please try again.")
     return {"zip": zip, "searchCenter": result["searchCenter"], "count": len(result["hotels"]), "hotels": result["hotels"]}
+
+
+@app.get("/api/saved-hotels")
+def saved_hotels(zip: str = Query(..., pattern=r"^[0-9]{5}$")) -> dict[str, Any]:
+    """Read local saved hotels for one originally searched ZIP; never calls Geoapify."""
+    return saved_hotel_controller.for_zip(zip)
+
+
+@app.post("/api/saved-hotels", status_code=status.HTTP_201_CREATED)
+def save_hotel(payload: SavedHotelCreate) -> dict[str, Any]:
+    try:
+        return saved_hotel_controller.save(payload)
+    except Exception:
+        raise HTTPException(status_code=400, detail="The hotel could not be saved locally.")
+
+
+@app.delete("/api/saved-hotels/{hotel_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_saved_hotel(hotel_id: str) -> None:
+    try:
+        removed = saved_hotel_controller.remove(hotel_id)
+    except Exception:
+        raise HTTPException(status_code=500, detail="The local hotel could not be removed.")
+    if not removed:
+        raise HTTPException(status_code=404, detail="Saved hotel not found.")
+
+
+@app.post("/api/hotel-chat")
+def hotel_chat(payload: HotelQuestion) -> dict[str, Any]:
+    """Answer a question with two backend-only model calls and checked local retrieval."""
+    try:
+        return hotel_chat_controller.answer(payload.question)
+    except (ChatWorkflowError, ValueError) as error:
+        raise HTTPException(status_code=422, detail=str(error))
+    except ModelProviderError as error:
+        raise HTTPException(status_code=502, detail=str(error))
 
 
 @app.get("/api/users")

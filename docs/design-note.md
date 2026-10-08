@@ -7,3 +7,9 @@ FastAPI owns SQLite schema creation, idempotent seed loading, validation, genera
 The backend follows MVC. Entity fields and relationships live in `backend/models/`; `DatabaseController` owns SQL, connections, foreign-key checks, and CRUD; `SearchController` and `BookingController` own their business flows. FastAPI routes adapt HTTP contracts to those controllers. Controllers do not expose database connections to the View.
 
 The application database is `backend/reservation.db` by default and is intentionally ignored by Git. Set `RESERVATION_DATABASE_PATH` for an alternate local database, including isolated test runs.
+
+For the Part 2 chatbot, the Vue View sends a natural-language question only to
+FastAPI. `HotelChatController` asks the configured backend-only LLM for a SQL
+proposal, calls `DatabaseController` through its public read-only method to
+validate and run it, then sends only the bounded returned records to the LLM for
+an answer. The LLM never accesses SQLite and no chatbot route can write data.
