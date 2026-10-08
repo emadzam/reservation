@@ -3,7 +3,7 @@
 ## Project access
 
 - Repository: [github.com/emadzam/reservation](https://github.com/emadzam/reservation)
-- Assessed commit: _replace with the final Part 2 commit hash before upload_.
+- Assessed implementation commit: `7b91a6b4d414eb31eae0687efe79a16153b06740`.
 - Startup and configuration: [README.md](README.md)
 - API contract: [docs/api-contract.md](docs/api-contract.md)
 
