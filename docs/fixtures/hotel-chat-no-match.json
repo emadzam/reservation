@@ -1,0 +1,10 @@
+{
+  "label": "Mocked no-match workflow",
+  "question": "What is available on January 1, 2030?",
+  "model_sql_response": {
+    "sql": "SELECT h.name, n.stay_date FROM saved_hotels h JOIN demo_hotel_nights n ON n.hotel_id = h.hotel_id WHERE n.stay_date = '2030-01-01'"
+  },
+  "retrieved_records": [],
+  "grounded_answer": "There are no saved local nightly records for January 1, 2030.",
+  "expected_status": "no_matches"
+}

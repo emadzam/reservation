@@ -48,13 +48,16 @@ labels, and Remove from Local.
 | 2026-10-08 | Remove from Local | Selected hotel, context, and five demo nights are deleted; Assignment 1 records remain | Local Part 2 tables returned to zero rows; Assignment 1 counts remained 8 hotels, 12 trips, 6 users, 6 bookings | None. |
 | 2026-10-08 | Fixed successful chatbot fixture | Two model calls, checked SELECT, bounded records, grounded answer | Automated test passed | Fixture is a labeled mock, not a live model call. See [success fixture](docs/fixtures/hotel-chat-success.json). |
 | 2026-10-08 | Fixed invalid-query fixture (`DELETE`) | Proposal rejected before SQLite execution | Automated test passed and saved row remained | Fixture is a labeled failure mock. See [invalid fixture](docs/fixtures/hotel-chat-invalid-query.json). |
+| 2026-10-08 | Fixed no-match fixture | Checked `SELECT` returns no rows and the second model call answers from that empty result | Automated test passed with `status: no_matches` and zero records | This is a labeled mock. See [no-match fixture](docs/fixtures/hotel-chat-no-match.json). |
+| 2026-10-08 | Fixed OpenAI rate-limit fixture | A simulated HTTP 429 produces clear feedback without consuming quota | Automated test passed; no real provider request or database write occurred | This is a labeled mock. See [rate-limit fixture](docs/fixtures/hotel-chat-rate-limit.json). |
+| 2026-10-08 | Fixed OpenAI provider-failure fixture | A simulated provider outage produces clear feedback without a database write | Automated test passed; no real provider request or database write occurred | This is a labeled mock. See [provider-failure fixture](docs/fixtures/hotel-chat-provider-failure.json). |
 | 2026-10-08 | Live OpenAI chatbot call after saving a local hotel | Provider returns a checked-SQL, grounded answer from saved data | A successful answer appeared in the browser after the response budget was increased; the UI exposed the proposed SQL and retrieved records | The answer is limited to saved hotels and simulated classroom records; it is not a complete hotel inventory. |
 
 Repeat the deterministic chatbot checks:
 
 ```powershell
 $env:TEMP="$PWD\.test-temp"; $env:TMP="$PWD\.test-temp"
-.venv\Scripts\python.exe -m unittest backend.test_hotel_chat -v
+.venv\Scripts\python.exe -m unittest backend.test_hotel_chat backend.test_openai_controller -v
 ```
 
 ## AI disclosure and evidence log

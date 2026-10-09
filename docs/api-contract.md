@@ -135,15 +135,19 @@ proposals return HTTP 422. Rates and room counts remain labeled as simulated
 classroom data. The remote model never receives a SQLite connection and cannot
 modify data.
 
-Repeat deterministic checks with:
+Repeat deterministic checks, including the labeled no-match, rate-limit, and
+provider-failure mocks, with:
 
 ```text
-$env:TEMP="$PWD\\.test-temp"; $env:TMP="$PWD\\.test-temp"; .venv\Scripts\python.exe -m unittest backend.test_hotel_chat -v
+$env:TEMP="$PWD\\.test-temp"; $env:TMP="$PWD\\.test-temp"; .venv\Scripts\python.exe -m unittest backend.test_hotel_chat backend.test_openai_controller -v
 ```
 
-The fixed successful and rejected-query fixtures are
-[`docs/fixtures/hotel-chat-success.json`](fixtures/hotel-chat-success.json) and
-[`docs/fixtures/hotel-chat-invalid-query.json`](fixtures/hotel-chat-invalid-query.json).
+The fixed labeled fixtures are
+[`hotel-chat-success.json`](fixtures/hotel-chat-success.json),
+[`hotel-chat-invalid-query.json`](fixtures/hotel-chat-invalid-query.json),
+[`hotel-chat-no-match.json`](fixtures/hotel-chat-no-match.json),
+[`hotel-chat-rate-limit.json`](fixtures/hotel-chat-rate-limit.json), and
+[`hotel-chat-provider-failure.json`](fixtures/hotel-chat-provider-failure.json).
 
 ## Health
 

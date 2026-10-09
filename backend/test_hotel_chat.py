@@ -61,6 +61,17 @@ class HotelChatControllerTests(unittest.TestCase):
         self.assertEqual(result["status"], "insufficient_data")
         self.assertEqual(model.calls, [])
 
+    def test_no_match_returns_a_grounded_empty_result(self) -> None:
+        self.save_hotel()
+        model = FakeModel([
+            '{"sql":"SELECT h.name, n.stay_date FROM saved_hotels h JOIN demo_hotel_nights n ON n.hotel_id = h.hotel_id WHERE n.stay_date = \'2030-01-01\'"}',
+            "There are no saved local nightly records for January 1, 2030.",
+        ])
+        result = HotelChatController(self.database, model).answer("What is available on January 1, 2030?")
+        self.assertEqual(result["status"], "no_matches")
+        self.assertEqual(result["records"], [])
+        self.assertEqual(len(model.calls), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

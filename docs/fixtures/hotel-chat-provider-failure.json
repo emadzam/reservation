@@ -1,0 +1,6 @@
+{
+  "label": "Mocked OpenAI provider failure — no live provider request",
+  "simulated_error": "URLError: simulated outage",
+  "expected_frontend_feedback": "The chatbot provider is unavailable. Please try again.",
+  "expected_database_effect": "No SQL query runs; saved hotels and demo-night records remain unchanged."
+}

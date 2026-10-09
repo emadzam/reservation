@@ -1,0 +1,6 @@
+{
+  "label": "Mocked OpenAI rate-limit failure — no live provider request",
+  "simulated_http_status": 429,
+  "expected_frontend_feedback": "OpenAI's rate limit was reached. Please try again later.",
+  "expected_database_effect": "No SQL query runs; saved hotels and demo-night records remain unchanged."
+}
